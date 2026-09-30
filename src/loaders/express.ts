@@ -1,53 +1,75 @@
-import express, { Request, Response, NextFunction} from 'express';
+import express, {
+  NextFunction,
+  Request,
+  Response,
+} from 'express';
+
 import cors from 'cors';
-import routes from '@/api';
+
+import routes from './routes';
+
 import config from '@/config';
 
-interface CustomError extends Error {
-  status?: number;
-}
-export default ({ app }: { app: express.Application }) => {
-  app.get('/status', (req: Request, res: Response) => {
-    res.status(200).end();
-  });
-  app.head('/status', (req: Request, res: Response) => {
-    res.status(200).end();
-  });
+import {
+  NotFoundError,
+} from '@/core/errors/AppError';
+
+import {
+  errorHandler,
+} from '@/core/errors/errorHandler';
+
+export default ({
+  app,
+}: {
+  app: express.Application;
+}) => {
+  app.get(
+    '/status',
+    (_req: Request, res: Response) => {
+      res.status(200).end();
+    },
+  );
+
+  app.head(
+    '/status',
+    (_req: Request, res: Response) => {
+      res.status(200).end();
+    },
+  );
+
   app.enable('trust proxy');
+
   app.use(cors());
-  app.use(require('method-override')());
+
+  app.use(
+    require('method-override')(),
+  );
+
   app.use(express.json());
+
   // Load API routes
-  app.use(config.api.prefix, routes());
+  app.use(
+    config.api.prefix,
+    routes,
+  );
 
-  // API Documentation
+  /*
+   * 404
+   */
+  app.use(
+    (
+      _req: Request,
+      _res: Response,
+      next: NextFunction,
+    ) => {
+      next(
+        new NotFoundError('Not Found'),
+      );
+    },
+  );
 
-  /// catch 404 and forward to error handler
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    const err: CustomError = new Error('Not Found');
-    err.status = 404;
-    next(err);
-  });
-
-  /// error handlers
-  app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
-    /**
-     * Handle 401 thrown by express-jwt library
-     */
-    if (err.name === 'UnauthorizedError') {
-      return res
-        .status(err.status || 401)
-        .send({ message: err.message })
-        .end();
-    }
-    return next(err);
-  });
-  app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
-    res.status(err.status || 500);
-    res.json({
-      errors: {
-        message: err.message,
-      },
-    });
-  });
+  /*
+   * Global error handler
+   */
+  app.use(errorHandler);
 };

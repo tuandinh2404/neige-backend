@@ -1,4 +1,4 @@
-import { IJwtUser } from "../interfaces/IJwtUser";
+import { IJwtUser } from "@/module/auth/auth.types";
 
 
 declare global {

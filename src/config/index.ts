@@ -7,6 +7,21 @@ if(envFound.error) {
     throw new Error("Không thể tìm thấy tệp .env");
 }
 
+const requiredEnv = [
+    'PG_HOST',
+    'PG_PORT',
+    'PG_DB',
+    'PG_USER',
+    'PG_PASSWORD',
+    'JWT_SECRET',
+];
+
+for (const key of requiredEnv) {
+    if (!process.env[key]) {
+        throw new Error(`Thiếu biến môi trường bắt buộc: ${key}`);
+    }
+}
+
 export default {
     port: parseInt(process.env.PORT || '3000', 10),
     database: {
